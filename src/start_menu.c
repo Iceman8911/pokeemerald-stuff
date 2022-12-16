@@ -92,8 +92,8 @@ EWRAM_DATA static bool8 sSavingComplete = FALSE;
 EWRAM_DATA static u8 sSaveInfoWindowId = 0;
 
 // For multi start menu
-const u8 gText_MenuExitPage[] = _("Exit {RIGHT_ARROW}");   //These 2 texts are used only when IS_MULTI_START_MENU_ENABLED is true
-const u8 gText_MenuExitLastPage[] = _("Exit {LEFT_ARROW}");
+const u8 gText_MenuExitPage[] = _("Exit {DPAD_RIGHT}");   //These 2 texts are used only when IS_MULTI_START_MENU_ENABLED is true
+const u8 gText_MenuExitLastPage[] = _("Exit {DPAD_LEFT}");
 
 // Menu action callbacks
 static bool8 StartMenuPokedexCallback(void);
