@@ -226,21 +226,21 @@ static const struct WindowTemplate sStandardBattleWindowTemplates[] =
     },
     [B_WIN_PP] = {
         .bg = 0,
-        .tilemapLeft = 21,
+        .tilemapLeft = 23, //Shift to the right a bit to make space for the split battle icons
         .tilemapTop = 55,
-        .width = 4,
+        .width = 2,
         .height = 2,
         .paletteNum = 5,
         .baseBlock = 0x0290,
     },
-    [B_WIN_DUMMY] = {
+    [B_WIN_CATEGORY_SPLIT] = {
         .bg = 0,
         .tilemapLeft = 21,
-        .tilemapTop = 57,
-        .width = 0,
-        .height = 0,
-        .paletteNum = 5,
-        .baseBlock = 0x0298,
+        .tilemapTop = 55,
+        .width = 2,
+        .height = 2,
+        .paletteNum = 10,  // Use a free palette for the split battle icons
+        .baseBlock = 0x0294,
     },
     [B_WIN_PP_REMAINING] = {
         .bg = 0,
@@ -447,21 +447,21 @@ static const struct WindowTemplate sBattleArenaWindowTemplates[] =
     },
     [B_WIN_PP] = {
         .bg = 0,
-        .tilemapLeft = 21,
+        .tilemapLeft = 23, //Shift to the right a bit to make space for the split battle icons
         .tilemapTop = 55,
-        .width = 4,
+        .width = 2,
         .height = 2,
         .paletteNum = 5,
         .baseBlock = 0x0290,
     },
-    [B_WIN_DUMMY] = {
+    [B_WIN_CATEGORY_SPLIT] = {
         .bg = 0,
         .tilemapLeft = 21,
-        .tilemapTop = 57,
-        .width = 0,
-        .height = 0,
-        .paletteNum = 5,
-        .baseBlock = 0x0298,
+        .tilemapTop = 55,
+        .width = 2,
+        .height = 2,
+        .paletteNum = 10,  // Use a free palette for the split battle icons
+        .baseBlock = 0x0294,
     },
     [B_WIN_PP_REMAINING] = {
         .bg = 0,

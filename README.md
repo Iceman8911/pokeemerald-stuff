@@ -1,3 +1,9 @@
+# Physical Special Split Icons In Battle
+The implemented version of a pokecommunity post of same name; [**Physical Special Split Icons In Battle**](https://www.pokecommunity.com/showthread.php?p=10527471#post10527471), but now supports regular pokeemerald
+
+
+
+
 # Pokémon Emerald
 
 This is a decompilation of Pokémon Emerald.
