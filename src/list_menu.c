@@ -9,6 +9,7 @@
 #include "decompress.h"
 #include "palette.h"
 #include "malloc.h"
+#include "start_menu.h"
 #include "strings.h"
 #include "sound.h"
 #include "constants/songs.h"
@@ -648,10 +649,23 @@ static void ListMenuDrawCursor(struct ListMenu *list)
     u8 yMultiplier = GetFontAttribute(list->template.fontId, FONTATTR_MAX_LETTER_HEIGHT) + list->template.itemVerticalPadding;
     u8 x = list->template.cursor_X;
     u8 y = list->selectedRow * yMultiplier + list->template.upText_Y;
+    u8 sListItems = list->template.totalItems;
+
+    if (IsStartMenuActive == TRUE)
+    {
+        if (sListItems > MAX_MENU_OPTIONS_SHOWN)  // Start Menu has more items than can be showed at once
+        {
+            sListItems = MAX_MENU_OPTIONS_SHOWN;
+        }
+    }
+
     switch (list->template.cursorKind)
     {
     case 0:
-        ListMenuPrint(list, gText_SelectorArrow2, x, y);
+        if ((list->selectedRow != sListItems - 1) && IsStartMenuActive == TRUE) // Not on the last option. Note that list->selectedRow only counts up to the MAX_MENU_OPTIONS_SHOWN
+            ListMenuPrint(list, gText_DownArrow, x, y);
+        else
+            ListMenuPrint(list, gText_SelectorArrow2, x, y);
         break;
     case 1:
         break;

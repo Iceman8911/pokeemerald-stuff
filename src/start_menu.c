@@ -85,6 +85,7 @@ EWRAM_DATA static u8 sNumStartMenuActions = 0;
 EWRAM_DATA static u8 sCurrentStartMenuActions[MAX_MENU_OPTIONS_SHOWN] = {0};
 EWRAM_DATA static u8 startMenuTaskId = 0;      // Special id for the task that runs the list menu
 EWRAM_DATA static u8 sInitStartMenuData[2] = {0};
+EWRAM_DATA bool8 IsStartMenuActive = FALSE;
 
 EWRAM_DATA static u8 (*sSaveDialogCallback)(void) = NULL;
 EWRAM_DATA static u8 sSaveDialogTimer = 0;
@@ -162,7 +163,6 @@ static const struct ListMenuTemplate sDefaultStartMenuListTemplate =
     .fontId = 1,
     .cursorKind = 0
 };
-static struct ListMenuTemplate sStartMenuListTemplate; // What we'll actually use
 static struct ListMenuItem *sStartMenuListItems; // Will store all our items as an array later
 
 static const u8 *const sPyramidFloorNames[FRONTIER_STAGES_PER_CHALLENGE + 1] =
@@ -277,7 +277,7 @@ void SetDexPokemonPokenavFlags(void) // unused
 static void BuildStartMenuActions(void)
 {
     sNumStartMenuActions = 0;
-    sStartMenuListTemplate = sDefaultStartMenuListTemplate; // Store a copy of our default template into sStartMenuListTemplate
+    gMultiuseListMenuTemplate = sDefaultStartMenuListTemplate; // Store a copy of our default template into gMultiuseListMenuTemplate
 
     if (IsOverworldLinkActive() == TRUE)
     {
@@ -336,18 +336,16 @@ static void BuildNormalStartMenu(void)
         { 
             //skip
         }
-        //else if (i >= MENU_ACTION_RETIRE_SAFARI && i <= MENU_ACTION_PYRAMID_BAG) //Skip the safari and battle frontier stuff. You can remove this check if you want
-        //{
+        else if (i >= MENU_ACTION_RETIRE_SAFARI && i <= MENU_ACTION_PYRAMID_BAG) //Skip the safari and battle frontier stuff. You can remove this check if you want
+        {
             //skip
-        //}
+        }
 
         //Any custom conditions you want can be added here can be added above like the first 4 //
 
         else //No other check required so proceed to print as normal
         { 
             AddStartMenuAction(i); 
-            /*sCurrentPageOptionCounter++; /*While i increases evrey time the loop is run,
-            sCurrentPageOptionCounter only increases with EACH successful option that was loaded*/
         }
     }
 }
@@ -462,12 +460,12 @@ static void RemoveExtraStartMenuWindows(void)
     }
 }
 
-static bool32 PrintStartMenuActions(s8 *pIndex, u32 count)
+static bool32 PrintStartMenuActions(s8 *pIndex, u32 count) // This isn't actually printing it anymore. It just stores the options in the list
 {
     s8 index = *pIndex;
 
     sStartMenuListItems = (void *)&gStringVar3[0x100];    // Initialize as a bunch of null array structs
-    sStartMenuListTemplate.items = sStartMenuListItems;   // Load the items into our list template
+    gMultiuseListMenuTemplate.items = sStartMenuListItems;   // Load the items into our list template
     
     do
     {
@@ -537,14 +535,11 @@ static bool32 InitStartMenuStep(void)
         break;
 
     case 4: // Print start menu actions
-        sStartMenuListTemplate.windowId = GetStartMenuWindowId();
+        gMultiuseListMenuTemplate.windowId = GetStartMenuWindowId();
         if (PrintStartMenuActions(&sInitStartMenuData[1], 2))
         {
-            sStartMenuListTemplate.totalItems = sNumStartMenuActions;
-            //if(sStartMenuCursorPos < 5)
-                gTasks[startMenuTaskId].data[5] = ListMenuInit(&sStartMenuListTemplate, 0, sStartMenuCursorPos);
-            //else
-                //gTasks[startMenuTaskId].data[5] = ListMenuInit(&sStartMenuListTemplate, 1, sStartMenuCursorPos - 1);
+            gMultiuseListMenuTemplate.totalItems = sNumStartMenuActions;
+            gTasks[startMenuTaskId].data[5] = ListMenuInit(&gMultiuseListMenuTemplate, 0, sStartMenuCursorPos);
             sInitStartMenuData[0]++;
         }
         break;
@@ -629,6 +624,7 @@ void ShowStartMenu(void)
         PlayerFreeze();
         StopPlayerAvatar();
     }
+    IsStartMenuActive = TRUE;
     CreateStartMenuTask(Task_ShowStartMenu);
     LockPlayerFieldControls();
 }
@@ -1474,6 +1470,7 @@ static void HideStartMenuWindow(void)
 void HideStartMenu(void)
 {
     PlaySE(SE_SELECT);
+    IsStartMenuActive = FALSE;
     HideStartMenuWindow();
 }
 

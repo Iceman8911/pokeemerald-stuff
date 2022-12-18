@@ -1,10 +1,11 @@
 # Scrolling Start Menu
-*Yawn*, its a scrolling start menu.
+*Yawn*, its a scrolling start menu. It's based off [**MapleSeed's**](https://github.com/s744865306fang/pokeemerald/tree/scroll_start_menu) own branch.
 
 # Note
 1. MAX_MENU_OPTIONS_SHOWN is the max amount of options that can show at any given time.
 2. FINAL_START_MENU_OPTION is the last option to be printed in the MENU_ACTION_* enum in "start_menu.c"
 3. For any exceptions or options you don't want to show but are inbetween (stuff like the safari zone options although I've done that already), add it to all the for loops in the function "BuildNormalStartMenu".
+4. It might be a bit buggy though its majorly ok. (Changing MAX_MENU_OPTIONS_SHOWN might cause some bugs. MIGHT)
 
 # Pokémon Emerald
 
