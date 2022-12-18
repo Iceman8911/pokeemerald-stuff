@@ -1,6 +1,9 @@
 #ifndef GUARD_START_MENU_H
 #define GUARD_START_MENU_H
 
+#define MAX_MENU_OPTIONS_SHOWN          8
+#define FINAL_START_MENU_OPTION         MENU_ACTION_PYRAMID_BAG
+
 extern bool8 (*gMenuCallback)(void);
 
 void ShowReturnToFieldStartMenu(void);

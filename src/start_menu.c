@@ -80,9 +80,10 @@ bool8 (*gMenuCallback)(void);
 // EWRAM
 EWRAM_DATA static u8 sSafariBallsWindowId = 0;
 EWRAM_DATA static u8 sBattlePyramidFloorWindowId = 0;
-EWRAM_DATA static u8 sStartMenuCursorPos = 0;
+EWRAM_DATA static u8 sStartMenuCursorPos;
 EWRAM_DATA static u8 sNumStartMenuActions = 0;
-EWRAM_DATA static u8 sCurrentStartMenuActions[9] = {0};
+EWRAM_DATA static u8 sCurrentStartMenuActions[MAX_MENU_OPTIONS_SHOWN] = {0};
+EWRAM_DATA static u8 startMenuTaskId = 0;      // Special id for the task that runs the list menu
 EWRAM_DATA static u8 sInitStartMenuData[2] = {0};
 
 EWRAM_DATA static u8 (*sSaveDialogCallback)(void) = NULL;
@@ -138,6 +139,31 @@ static void Task_WaitForBattleTowerLinkSave(u8 taskId);
 static bool8 FieldCB_ReturnToFieldStartMenu(void);
 
 static const struct WindowTemplate sSafariBallsWindowTemplate = {0, 1, 1, 9, 4, 0xF, 8};
+
+#include "list_menu.h"
+static const struct ListMenuTemplate sDefaultStartMenuListTemplate =
+{ // Just a default list to copy from
+    .items = 0,
+    .moveCursorFunc = 0,
+    .itemPrintFunc = 0,
+    .totalItems = 0,
+    .maxShowed = MAX_MENU_OPTIONS_SHOWN,
+    .windowId = 0,
+    .header_X = 0,
+    .item_X = 8,
+    .cursor_X = 0,
+    .upText_Y = 1,
+    .cursorPal = 2,
+    .fillValue = 1,
+    .cursorShadowPal = 3,
+    .lettersSpacing = 1,
+    .itemVerticalPadding = 0,
+    .scrollMultiple = 0,
+    .fontId = 1,
+    .cursorKind = 0
+};
+static struct ListMenuTemplate sStartMenuListTemplate; // What we'll actually use
+static struct ListMenuItem *sStartMenuListItems; // Will store all our items as an array later
 
 static const u8 *const sPyramidFloorNames[FRONTIER_STAGES_PER_CHALLENGE + 1] =
 {
@@ -251,6 +277,7 @@ void SetDexPokemonPokenavFlags(void) // unused
 static void BuildStartMenuActions(void)
 {
     sNumStartMenuActions = 0;
+    sStartMenuListTemplate = sDefaultStartMenuListTemplate; // Store a copy of our default template into sStartMenuListTemplate
 
     if (IsOverworldLinkActive() == TRUE)
     {
@@ -289,26 +316,40 @@ static void AddStartMenuAction(u8 action)
 
 static void BuildNormalStartMenu(void)
 {
-    if (FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE)
-    {
-        AddStartMenuAction(MENU_ACTION_POKEDEX);
-    }
-    if (FlagGet(FLAG_SYS_POKEMON_GET) == TRUE)
-    {
-        AddStartMenuAction(MENU_ACTION_POKEMON);
-    }
+    u8 i;
 
-    AddStartMenuAction(MENU_ACTION_BAG);
-
-    if (FlagGet(FLAG_SYS_POKENAV_GET) == TRUE)
+    for (i = 0; i < (FINAL_START_MENU_OPTION); i++) //To keep the loop going without resetting anything and self adjusting itself with each page
     {
-        AddStartMenuAction(MENU_ACTION_POKENAV);
-    }
+        if(!FlagGet(FLAG_SYS_POKEDEX_GET) && i == MENU_ACTION_POKEDEX) //The loop wants to print the Pokedex option but the flag is not set
+        {  
+            //skip
+        } 
+        else if(!FlagGet(FLAG_SYS_POKEMON_GET) && i == MENU_ACTION_POKEMON) //The loop wants to print the Pokemon option but the flag is not set
+        {  
+            //skip
+        }
+        else if(!FlagGet(FLAG_SYS_POKENAV_GET) && i == MENU_ACTION_POKENAV) //The loop wants to print the Pokenav option but the flag is not set
+        {  
+            //skip
+        }
+        else if(i == MENU_ACTION_EXIT) //Don't print the Exit action normally, to reduce the amount of stuff you need to edit if you shift stuff around in the MENU_ACTION_* enum
+        { 
+            //skip
+        }
+        //else if (i >= MENU_ACTION_RETIRE_SAFARI && i <= MENU_ACTION_PYRAMID_BAG) //Skip the safari and battle frontier stuff. You can remove this check if you want
+        //{
+            //skip
+        //}
 
-    AddStartMenuAction(MENU_ACTION_PLAYER);
-    AddStartMenuAction(MENU_ACTION_SAVE);
-    AddStartMenuAction(MENU_ACTION_OPTION);
-    AddStartMenuAction(MENU_ACTION_EXIT);
+        //Any custom conditions you want can be added here can be added above like the first 4 //
+
+        else //No other check required so proceed to print as normal
+        { 
+            AddStartMenuAction(i); 
+            /*sCurrentPageOptionCounter++; /*While i increases evrey time the loop is run,
+            sCurrentPageOptionCounter only increases with EACH successful option that was loaded*/
+        }
+    }
 }
 
 static void BuildSafariZoneStartMenu(void)
@@ -425,16 +466,22 @@ static bool32 PrintStartMenuActions(s8 *pIndex, u32 count)
 {
     s8 index = *pIndex;
 
+    sStartMenuListItems = (void *)&gStringVar3[0x100];    // Initialize as a bunch of null array structs
+    sStartMenuListTemplate.items = sStartMenuListItems;   // Load the items into our list template
+    
     do
     {
         if (sStartMenuItems[sCurrentStartMenuActions[index]].func.u8_void == StartMenuPlayerNameCallback)
         {
-            PrintPlayerNameOnWindow(GetStartMenuWindowId(), sStartMenuItems[sCurrentStartMenuActions[index]].text, 8, (index << 4) + 9);
+            // Save the player's name and its position id to our sStartMenuListItems
+            sStartMenuListItems[index].name = gSaveBlock2Ptr->playerName;
+            sStartMenuListItems[index].id = index;
         }
         else
         {
-            StringExpandPlaceholders(gStringVar4, sStartMenuItems[sCurrentStartMenuActions[index]].text);
-            AddTextPrinterParameterized(GetStartMenuWindowId(), FONT_NORMAL, gStringVar4, 8, (index << 4) + 9, TEXT_SKIP_DRAW, NULL);
+            // Save the option's name and its position id to our sStartMenuListItems
+            sStartMenuListItems[index].name = sStartMenuItems[sCurrentStartMenuActions[index]].text;
+            sStartMenuListItems[index].id = index;
         }
 
         index++;
@@ -452,40 +499,60 @@ static bool32 PrintStartMenuActions(s8 *pIndex, u32 count)
     return FALSE;
 }
 
+
+
 static bool32 InitStartMenuStep(void)
 {
     s8 state = sInitStartMenuData[0];
 
     switch (state)
     {
-    case 0:
+    case 0:  // Initialize
         sInitStartMenuData[0]++;
         break;
-    case 1:
+
+    case 1: // Create start menu actions
         BuildStartMenuActions();
         sInitStartMenuData[0]++;
         break;
-    case 2:
+
+    case 2: // Create message box and window frame
         LoadMessageBoxAndBorderGfx();
-        DrawStdWindowFrame(AddStartMenuWindow(sNumStartMenuActions), FALSE);
+        if (sNumStartMenuActions < MAX_MENU_OPTIONS_SHOWN)
+            // The start menu will be as long as the options
+            DrawStdWindowFrame(AddStartMenuWindow(sNumStartMenuActions), FALSE);
+        else
+            // The start menu will be long enough to look decent
+            DrawStdWindowFrame(AddStartMenuWindow(MAX_MENU_OPTIONS_SHOWN - 1), FALSE);
         sInitStartMenuData[1] = 0;
         sInitStartMenuData[0]++;
         break;
-    case 3:
+
+    case 3: // Check if the Safari Zone or Battle Pyramid is active
         if (GetSafariZoneFlag())
             ShowSafariBallsWindow();
         if (InBattlePyramid())
             ShowPyramidFloorWindow();
         sInitStartMenuData[0]++;
         break;
-    case 4:
+
+    case 4: // Print start menu actions
+        sStartMenuListTemplate.windowId = GetStartMenuWindowId();
         if (PrintStartMenuActions(&sInitStartMenuData[1], 2))
+        {
+            sStartMenuListTemplate.totalItems = sNumStartMenuActions;
+            //if(sStartMenuCursorPos < 5)
+                gTasks[startMenuTaskId].data[5] = ListMenuInit(&sStartMenuListTemplate, 0, sStartMenuCursorPos);
+            //else
+                //gTasks[startMenuTaskId].data[5] = ListMenuInit(&sStartMenuListTemplate, 1, sStartMenuCursorPos - 1);
             sInitStartMenuData[0]++;
+        }
         break;
-    case 5:
-        sStartMenuCursorPos = InitMenuNormal(GetStartMenuWindowId(), FONT_NORMAL, 0, 9, 16, sNumStartMenuActions, sStartMenuCursorPos);
+
+    case 5: // Load the menu cursor and show the built start menu
         CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_MAP);
         return TRUE;
+
     }
 
     return FALSE;
@@ -513,6 +580,7 @@ static void CreateStartMenuTask(TaskFunc followupFunc)
     sInitStartMenuData[1] = 0;
     taskId = CreateTask(StartMenuTask, 0x50);
     SetTaskFuncWithFollowupFunc(taskId, StartMenuTask, followupFunc);
+    startMenuTaskId = taskId;
 }
 
 static bool8 FieldCB_ReturnToFieldStartMenu(void)
@@ -567,21 +635,18 @@ void ShowStartMenu(void)
 
 static bool8 HandleStartMenuInput(void)
 {
-    if (JOY_NEW(DPAD_UP))
-    {
-        PlaySE(SE_SELECT);
-        sStartMenuCursorPos = Menu_MoveCursor(-1);
-    }
+    u8 menuTask = gTasks[startMenuTaskId].data[5];
+    s32 menuInput = ListMenu_ProcessInput(menuTask); // ListMenu_ProcessInput deals with all menuInput related stuff for lists
 
-    if (JOY_NEW(DPAD_DOWN))
-    {
-        PlaySE(SE_SELECT);
-        sStartMenuCursorPos = Menu_MoveCursor(1);
-    }
+    // The 2 below statements are for setting sStartMenuCursorPos in the case the user doesn't click the A_BUTTON
+    struct ListMenu *list = (void *) gTasks[menuTask].data;
+    s32 menuId = list->template.items[list->scrollOffset + list->selectedRow].id;
 
-    if (JOY_NEW(A_BUTTON))
+    if (menuInput >= 0)
     {
+        sStartMenuCursorPos = menuInput; // Save the cursor location
         PlaySE(SE_SELECT);
+
         if (sStartMenuItems[sCurrentStartMenuActions[sStartMenuCursorPos]].func.u8_void == StartMenuPokedexCallback)
         {
             if (GetNationalPokedexCount(FLAG_GET_SEEN) == 0)
@@ -606,6 +671,11 @@ static bool8 HandleStartMenuInput(void)
         RemoveExtraStartMenuWindows();
         HideStartMenu();
         return TRUE;
+    }
+
+    if (JOY_NEW(DPAD_UP | DPAD_DOWN))
+    {
+        sStartMenuCursorPos = menuId; // Change sStartMenuCursorPos if the Dpad Up or Down keys are used
     }
 
     return FALSE;
@@ -723,7 +793,6 @@ static bool8 StartMenuExitCallback(void)
 {
     RemoveExtraStartMenuWindows();
     HideStartMenu(); // Hide start menu
-
     return TRUE;
 }
 
@@ -1015,7 +1084,7 @@ static u8 SaveFileExistsCallback(void)
     }
     else
     {
-        ShowSaveMessage(gText_AlreadySavedFile, SaveConfirmOverwriteCallback);
+        sSaveDialogCallback = SaveSavingMessageCallback;
     }
 
     return SAVE_IN_PROGRESS;
@@ -1396,6 +1465,7 @@ void SaveForBattleTowerLink(void)
 static void HideStartMenuWindow(void)
 {
     ClearStdWindowAndFrame(GetStartMenuWindowId(), TRUE);
+    DestroyListMenuTask(gTasks[startMenuTaskId].data[5], 0 ,0); // Reset and remove the menu
     RemoveStartMenuWindow();
     ScriptUnfreezeObjectEvents();
     UnlockPlayerFieldControls();

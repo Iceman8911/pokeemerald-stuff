@@ -1,3 +1,11 @@
+# Scrolling Start Menu
+*Yawn*, its a scrolling start menu.
+
+# Note
+1. MAX_MENU_OPTIONS_SHOWN is the max amount of options that can show at any given time.
+2. FINAL_START_MENU_OPTION is the last option to be printed in the MENU_ACTION_* enum in "start_menu.c"
+3. For any exceptions or options you don't want to show but are inbetween (stuff like the safari zone options although I've done that already), add it to all the for loops in the function "BuildNormalStartMenu".
+
 # Pokémon Emerald
 
 This is a decompilation of Pokémon Emerald.
