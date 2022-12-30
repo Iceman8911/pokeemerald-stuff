@@ -1333,7 +1333,11 @@ static bool8 WaitForAorBPress(void)
 
 bool8 ScrCmd_waitbuttonpress(struct ScriptContext *ctx)
 {
-    SetupNativeScript(ctx, WaitForAorBPress);
+    if (DidDialogueSkipReachEOS == FALSE)  /* Fixed a glitch that required waitbuttonpress
+                                        to work when prematurely ending it with my skip button */
+    {
+        SetupNativeScript(ctx, WaitForAorBPress);
+    }
     return TRUE;
 }
 

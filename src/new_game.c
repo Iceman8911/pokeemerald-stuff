@@ -203,6 +203,7 @@ void NewGameInitData(void)
     WipeTrainerNameRecords();
     ResetTrainerHillResults();
     ResetContestLinkResults();
+    gSaveBlock1Ptr->shouldDialogueSkipPopupShow = TRUE;
 }
 
 static void ResetMiniGamesRecords(void)

@@ -4,6 +4,7 @@
 #include "characters.h"
 
 #define NUM_TEXT_PRINTERS 32
+#define NUM_LINES_TO_SKIP 2
 
 // Given as a text speed when all the text should be
 // loaded at once but not copied to vram yet.
@@ -66,6 +67,9 @@ struct TextPrinterSubStruct
 struct TextPrinterTemplate
 {
     const u8 *currentChar;
+    const u8 *firstChar;                    // Used to get the strings length
+    u8 lineNumberAfterSkip;                 // Line number after skip
+    u8 originalLineNumber;                  // Normal line number
     u8 windowId;
     u8 fontId;
     u8 x;
@@ -157,6 +161,7 @@ bool16 TextPrinterWaitWithDownArrow(struct TextPrinter *textPrinter);
 bool16 TextPrinterWait(struct TextPrinter *textPrinter);
 void DrawDownArrow(u8 windowId, u16 x, u16 y, u8 bgColor, bool8 drawArrow, u8 *counter, u8 *yCoordIndex);
 s32 GetStringWidth(u8 fontId, const u8 *str, s16 letterSpacing);
+u8 GetNumberOfLinesFromString(const u8 *str);
 u8 RenderTextHandleBold(u8 *pixels, u8 fontId, u8 *str);
 u8 DrawKeypadIcon(u8 windowId, u8 keypadIconId, u16 x, u16 y);
 u8 GetKeypadIconTileOffset(u8 keypadIconId);

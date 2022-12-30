@@ -19,4 +19,6 @@ u8 GetFieldMessageBoxMode(void);
 void StopFieldMessage(void);
 void InitFieldMessageBox(void);
 
+extern EWRAM_DATA bool8 DidDialogueSkipReachEOS;
+
 #endif // GUARD_FIELD_MESSAGE_BOX_H

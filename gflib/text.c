@@ -1,10 +1,13 @@
 #include "global.h"
 #include "battle.h"
+#include "field_message_box.h"
 #include "main.h"
 #include "m4a.h"
 #include "palette.h"
+#include "script.h"
 #include "sound.h"
 #include "constants/songs.h"
+#include "strings.h"
 #include "string_util.h"
 #include "window.h"
 #include "text.h"
@@ -35,13 +38,16 @@ static u32 GetGlyphWidth_Short(u16, bool32);
 static u32 GetGlyphWidth_Narrow(u16, bool32);
 static u32 GetGlyphWidth_SmallNarrow(u16, bool32);
 
+
 static EWRAM_DATA struct TextPrinter sTempTextPrinter = {0};
 static EWRAM_DATA struct TextPrinter sTextPrinters[NUM_TEXT_PRINTERS] = {0};
+
 
 static u16 sFontHalfRowLookupTable[0x51];
 static u16 sLastTextBgColor;
 static u16 sLastTextFgColor;
 static u16 sLastTextShadowColor;
+
 
 const struct FontInfo *gFonts;
 bool8 gDisableTextPrinters;
@@ -294,7 +300,9 @@ bool16 AddTextPrinter(struct TextPrinterTemplate *printerTemplate, u8 speed, voi
     if (speed != TEXT_SKIP_DRAW && speed != 0)
     {
         --sTempTextPrinter.textSpeed;
-        sTextPrinters[printerTemplate->windowId] = sTempTextPrinter;
+        // Note that the windowId is by default 0
+        sTextPrinters[printerTemplate->windowId] = sTempTextPrinter; /* So from what I see this is 
+        where the text data is finally stored with everything else before being processed, right? */
     }
     else
     {
@@ -324,7 +332,7 @@ void RunTextPrinters(void)
     {
         for (i = 0; i < NUM_TEXT_PRINTERS; ++i)
         {
-            if (sTextPrinters[i].active)
+            if (sTextPrinters[i].active) // Using msgbox, i is 0 
             {
                 u16 renderCmd = RenderFont(&sTextPrinters[i]);
                 switch (renderCmd)
@@ -939,12 +947,67 @@ static u16 RenderText(struct TextPrinter *textPrinter)
     s32 width;
     s32 widthHelper;
 
+    u32 i;
+    u32 stringWidth;
+
     switch (textPrinter->state)
     {
     case RENDER_STATE_HANDLE_CHAR:
         if (JOY_HELD(A_BUTTON | B_BUTTON) && subStruct->hasPrintBeenSpedUp)
             textPrinter->delayCounter = 0;
+        if (JOY_NEW(R_BUTTON)) // Skips the required lines
+        {
+            if((textPrinter->printerTemplate.originalLineNumber + NUM_LINES_TO_SKIP) 
+                <= GetNumberOfLinesFromString(textPrinter->printerTemplate.firstChar))  // Make sure the lines are enough before skipping
+            {
+                while(TRUE)
+                { 
+                    if (*textPrinter->printerTemplate.currentChar != EOS)
+                    {
+                        textPrinter->printerTemplate.currentChar++;  // Skip to next character
+                    }
+                    else 
+                    {
+                        // EOS has been reached
+                        DidDialogueSkipReachEOS = TRUE;
+                        return RENDER_FINISH; 
+                    }
 
+                    if (*textPrinter->printerTemplate.currentChar == CHAR_NEWLINE            // \n
+                        || *textPrinter->printerTemplate.currentChar == CHAR_PROMPT_SCROLL   // \l
+                        || *textPrinter->printerTemplate.currentChar == CHAR_PROMPT_CLEAR)   // \p
+                    {
+                        textPrinter->printerTemplate.lineNumberAfterSkip++; // Current line has reached its end
+                        textPrinter->printerTemplate.currentChar++;  // Skip to next character
+                    }
+
+                    if (textPrinter->printerTemplate.lineNumberAfterSkip 
+                        == (NUM_LINES_TO_SKIP + textPrinter->printerTemplate.originalLineNumber)) // Enough lines have been skipped
+                    {
+                        // Skip worked successfully, restore original line number
+                        textPrinter->printerTemplate.originalLineNumber = textPrinter->printerTemplate.lineNumberAfterSkip;
+                        // Clear the dialogue box and reset cursor position
+                        FillWindowPixelBuffer(textPrinter->printerTemplate.windowId, PIXEL_FILL(textPrinter->printerTemplate.bgColor));
+                        textPrinter->printerTemplate.currentX = textPrinter->printerTemplate.x;
+                        textPrinter->printerTemplate.currentY = textPrinter->printerTemplate.y;
+                        return RENDER_UPDATE;
+                    }
+
+                }
+            }
+            else 
+            {
+                // String is too short
+                DidDialogueSkipReachEOS = TRUE;
+                return RENDER_FINISH; 
+            }
+        }
+        if (JOY_NEW(L_BUTTON))  // Skips the entire string
+        {
+            HideFieldMessageBox();
+            DidDialogueSkipReachEOS = TRUE;
+            return RENDER_FINISH; // Ez
+        }
         if (textPrinter->delayCounter && textPrinter->textSpeed)
         {
             textPrinter->delayCounter--;
@@ -969,6 +1032,8 @@ static u16 RenderText(struct TextPrinter *textPrinter)
         case CHAR_NEWLINE:
             textPrinter->printerTemplate.currentX = textPrinter->printerTemplate.x;
             textPrinter->printerTemplate.currentY += (gFonts[textPrinter->printerTemplate.fontId].maxLetterHeight + textPrinter->printerTemplate.lineSpacing);
+            textPrinter->printerTemplate.originalLineNumber++;
+            textPrinter->printerTemplate.lineNumberAfterSkip = textPrinter->printerTemplate.originalLineNumber;
             return RENDER_REPEAT;
         case PLACEHOLDER_BEGIN:
             textPrinter->printerTemplate.currentChar++;
@@ -1102,10 +1167,14 @@ static u16 RenderText(struct TextPrinter *textPrinter)
             break;
         case CHAR_PROMPT_CLEAR:
             textPrinter->state = RENDER_STATE_CLEAR;
+            textPrinter->printerTemplate.originalLineNumber++;
+            textPrinter->printerTemplate.lineNumberAfterSkip = textPrinter->printerTemplate.originalLineNumber;
             TextPrinterInitDownArrowCounters(textPrinter);
             return RENDER_UPDATE;
         case CHAR_PROMPT_SCROLL:
             textPrinter->state = RENDER_STATE_SCROLL_START;
+            textPrinter->printerTemplate.originalLineNumber++;
+            textPrinter->printerTemplate.lineNumberAfterSkip = textPrinter->printerTemplate.originalLineNumber;
             TextPrinterInitDownArrowCounters(textPrinter);
             return RENDER_UPDATE;
         case CHAR_EXTRA_SYMBOL:
@@ -1903,4 +1972,27 @@ static void DecompressGlyph_Bold(u16 glyphId)
     DecompressGlyphTile(glyphs + 0x80, gCurGlyph.gfxBufferBottom);
     gCurGlyph.width = 8;
     gCurGlyph.height = 12;
+}
+
+
+u8 GetNumberOfLinesFromString(const u8 *str)
+{
+    s32 i = 0;
+    u8 numOfLines = 0;
+    const u8 *string = str;
+
+    while (string[i] != EOS)
+    {
+        if (string[i] == CHAR_NEWLINE 
+        || string[i] == CHAR_PROMPT_CLEAR 
+        || string[i] == CHAR_PROMPT_SCROLL) // Curent character is \n, \p or \l which means a new line is next
+        {
+            numOfLines++;
+        }
+        i++;
+    }
+    
+    numOfLines++; // Reached EOS so that's the final line.
+
+    return numOfLines;
 }

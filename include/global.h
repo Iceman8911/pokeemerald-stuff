@@ -1016,6 +1016,7 @@ struct SaveBlock1
     /*0x3D5A*/ u8 unused_3D5A[10];
     /*0x3D64*/ struct TrainerHillSave trainerHill;
     /*0x3D70*/ struct WaldaPhrase waldaPhrase;
+    bool8 shouldDialogueSkipPopupShow:1; // Just one or off
     // sizeof: 0x3D88
 };
 

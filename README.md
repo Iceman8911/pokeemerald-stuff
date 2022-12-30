@@ -1,3 +1,13 @@
+# Skip Text
+
+AHAH, so you might me wondering... "Why make this?". The simple answer is because I can and nothing more :) .
+The R button skips a number of lines in any dialogue which is specified in text.h as NUM_LINES_TO_SKIP while the L button skips all the lines of dialogue. There's a dumb tooltip I made from a funny dream (don't ask :) ) and you can disable it as you wish by getting rid of anything related to this "shouldDialogueSkipPopupShow". One is in global.h, another in field_message_box.c and the last in new_game.c (Please, just disable it already. Its embarassing >.<)
+
+(Also, this branch pulls in the changes from DizzyEggg's mugshots branch, soo..)
+
+Enjoy! :3
+
+
 # Pokémon Emerald
 
 This is a decompilation of Pokémon Emerald.

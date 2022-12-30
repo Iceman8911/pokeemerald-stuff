@@ -1,15 +1,25 @@
 #include "global.h"
 #include "menu.h"
+#include "sprite.h"
 #include "string_util.h"
 #include "task.h"
 #include "text.h"
 #include "match_call.h"
 #include "field_message_box.h"
 
+#define TEXT_POPUP_SPRITE_ID 0x3333
+
 static EWRAM_DATA u8 sFieldMessageBoxMode = 0;
+static EWRAM_DATA u8 spriteId = 0;
+EWRAM_DATA bool8 DidDialogueSkipReachEOS = FALSE;
+
+static const u32 sTextPopUpSkipSpriteGfx[] = INCBIN_U32("graphics/extra/SkipDialoguePopUpText.4bpp.lz");
+static const u16 sTextPopUpSkipSpriteGfxPal[] = INCBIN_U16("graphics/extra/SkipDialoguePopUpText.gbapal");
 
 static void ExpandStringAndStartDrawFieldMessage(const u8 *, bool32);
 static void StartDrawFieldMessage(void);
+static void LoadTextPopUpSkipSprite(void);
+static void RemoveTextPopUpSkipSprite(void);
 
 void InitFieldMessageBox(void)
 {
@@ -33,6 +43,8 @@ static void Task_DrawFieldMessage(u8 taskId)
            task->tState++;
            break;
         case 1:
+           if (gSaveBlock1Ptr->shouldDialogueSkipPopupShow)
+                LoadTextPopUpSkipSprite();
            DrawDialogueFrame(0, TRUE);
            task->tState++;
            break;
@@ -131,9 +143,12 @@ static void StartDrawFieldMessage(void)
 
 void HideFieldMessageBox(void)
 {
+    if (gSaveBlock1Ptr->shouldDialogueSkipPopupShow)
+        RemoveTextPopUpSkipSprite();
     DestroyTask_DrawFieldMessage();
     ClearDialogWindowAndFrame(0, TRUE);
     sFieldMessageBoxMode = FIELD_MESSAGE_BOX_HIDDEN;
+    DidDialogueSkipReachEOS = FALSE;
 }
 
 u8 GetFieldMessageBoxMode(void)
@@ -160,4 +175,14 @@ void StopFieldMessage(void)
 {
     DestroyTask_DrawFieldMessage();
     sFieldMessageBoxMode = FIELD_MESSAGE_BOX_HIDDEN;
+}
+
+static void LoadTextPopUpSkipSprite(void)
+{
+    spriteId = LoadStaticFieldPic(sTextPopUpSkipSpriteGfx, sTextPopUpSkipSpriteGfxPal, 204, 27, TEXT_POPUP_SPRITE_ID); // I'm not sure what value you should set as the sprite tag Id but this is good enough
+}
+
+static void RemoveTextPopUpSkipSprite(void)
+{
+    DestroyStaticFieldPic(TEXT_POPUP_SPRITE_ID, spriteId);
 }

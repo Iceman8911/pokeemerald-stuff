@@ -323,4 +323,8 @@ u8 SpriteTileAllocBitmapOp(u16 bit, u8 op);
 void ClearSpriteCopyRequests(void);
 void ResetAffineAnimData(void);
 
+
+u8 LoadStaticFieldPic(const u32 *gfx, const u16 *pal, u8 x, u8 y, u16 spriteTagId);    // Used for my dialogue popup
+void DestroyStaticFieldPic(u16 spriteTagId, u8 spriteId);
+
 #endif //GUARD_SPRITE_H

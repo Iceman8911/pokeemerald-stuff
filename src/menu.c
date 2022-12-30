@@ -70,6 +70,7 @@ static EWRAM_DATA u16 sFiller = 0;  // needed to align
 static EWRAM_DATA bool8 sScheduledBgCopiesToVram[4] = {FALSE};
 static EWRAM_DATA u16 sTempTileDataBufferIdx = 0;
 static EWRAM_DATA void *sTempTileDataBuffer[0x20] = {NULL};
+EWRAM_DATA bool8 gIsDialogueActive = FALSE;
 
 const u16 gStandardMenuPalette[] = INCBIN_U16("graphics/interface/std_menu.gbapal");
 
@@ -166,10 +167,13 @@ u16 RunTextPrintersAndIsPrinter0Active(void)
 }
 
 u16 AddTextPrinterParameterized2(u8 windowId, u8 fontId, const u8 *str, u8 speed, void (*callback)(struct TextPrinterTemplate *, u16), u8 fgColor, u8 bgColor, u8 shadowColor)
-{
+{ 
     struct TextPrinterTemplate printer;
 
     printer.currentChar = str;
+    printer.firstChar = str;
+    printer.originalLineNumber = 0;
+    printer.lineNumberAfterSkip = 0;
     printer.windowId = windowId;
     printer.fontId = fontId;
     printer.x = 0;
@@ -214,11 +218,11 @@ void LoadMessageBoxAndBorderGfx(void)
 
 void DrawDialogueFrame(u8 windowId, bool8 copyToVram)
 {
-    CallWindowFunction(windowId, WindowFunc_DrawDialogueFrame);
-    FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
-    PutWindowTilemap(windowId);
+    CallWindowFunction(windowId, WindowFunc_DrawDialogueFrame); // Sets the unique Dialogue Frame
+    FillWindowPixelBuffer(windowId, PIXEL_FILL(1));   // Sets the colour of inner part of the Dialogue message. Its normally white
+    PutWindowTilemap(windowId);    // Deals with the printing
     if (copyToVram == TRUE)
-        CopyWindowToVram(windowId, COPYWIN_FULL);
+        CopyWindowToVram(windowId, COPYWIN_FULL);    // Shows everything we've done
 }
 
 void DrawStdWindowFrame(u8 windowId, bool8 copyToVram)
@@ -237,6 +241,7 @@ void ClearDialogWindowAndFrame(u8 windowId, bool8 copyToVram)
     ClearWindowTilemap(windowId);
     if (copyToVram == TRUE)
         CopyWindowToVram(windowId, COPYWIN_FULL);
+    gIsDialogueActive = FALSE;
 }
 
 void ClearStdWindowAndFrame(u8 windowId, bool8 copyToVram)

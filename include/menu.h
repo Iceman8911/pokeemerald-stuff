@@ -124,5 +124,7 @@ void AddTextPrinterWithCustomSpeedForMessage(bool8 allowSkippingDelayWithButtonP
 void EraseYesNoWindow(void);
 void PrintMenuActionTextsAtPos(u8 windowId, u8 fontId, u8 left, u8 top, u8 lineHeight, u8 itemCount, const struct MenuAction *strs);
 void Menu_LoadStdPal(void);
+extern EWRAM_DATA bool8 gIsDialogueActive;
+//extern EWRAM_DATA u8 gDialogueString[]; // Used as a temp string when dialogue needs to be skipped
 
 #endif // GUARD_MENU_H
