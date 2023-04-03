@@ -8,6 +8,7 @@ The colours of the text can be edited in "src/battle_message.c". Just search for
 ## To do
 1. Moves like Counter, Mirror Coat, Metal Burst, Seismic Toss, Night Shade, etc can show as super effective, not very effective,etc. I'll fix this later.  ---- DONE
 2. Compatibility with type-immune abilities (I kinda have mixed feelings with this since it automatically reveals the opponents ability to you).
+3. Fix smh visual bugs
 
 ## Note
 I had a previous implementation similar to [**what I referenced earlier**](https://www.pokecommunity.com/showpost.php?p=10167016&postcount=83). You can pull all previous commits till the comit with this SHA a6f851da02e0ffe1b91612f13461b8481bdf51d6.

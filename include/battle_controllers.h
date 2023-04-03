@@ -96,6 +96,8 @@ enum {
 
 #define PARTY_SUMM_SKIP_DRAW_DELAY (1 << 7)
 
+//#define ENABLE_TEXT_EFFECTIVENESS_COLORS    Comment this out if you wish
+
 // Special return values in gBattleBufferB from Battle Controller functions.
 #define RET_VALUE_LEVELED_UP   11
 

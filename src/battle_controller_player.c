@@ -437,9 +437,11 @@ static void HandleInputChooseTarget(void)
 
     DoBounceEffect(gMultiUsePlayerCursor, BOUNCE_HEALTHBOX, 15, 1);
 
+    #ifdef ENABLE_TEXT_EFFECTIVENESS_COLORS
     // Refresh it immediately a move is clicked and a target is selected
     MoveSelectionDisplayMoveNames();
     MoveSelectionCreateCursorAt(gMoveSelectionCursor[gActiveBattler], 0);
+    #endif
 
     // what a weird loop
     i = 0;
@@ -522,9 +524,11 @@ static void HandleInputChooseTarget(void)
                 i = 0;
         } while (i == 0);
 
+        #ifdef ENABLE_TEXT_EFFECTIVENESS_COLORS
         // Refresh when switching between targets
         MoveSelectionDisplayMoveNames();
         MoveSelectionCreateCursorAt(gMoveSelectionCursor[gActiveBattler], 0);
+        #endif
 
         gSprites[gBattlerSpriteIds[gMultiUsePlayerCursor]].callback = SpriteCB_ShowAsMoveTarget;
     }
@@ -654,6 +658,7 @@ static void HandleInputChooseMove(void)
     else if (JOY_NEW(B_BUTTON) || gPlayerDpadHoldFrames > 59)
     {
         PlaySE(SE_SELECT);
+        #ifdef ENABLE_TEXT_EFFECTIVENESS_COLORS
         #ifdef ENABLE_STAB_TEXT
         if (JOY_NEW(B_BUTTON))
         {
@@ -663,6 +668,7 @@ static void HandleInputChooseMove(void)
                 sSTABIconId = 0;
             }
         }
+        #endif
         #endif
         BtlController_EmitTwoReturnValues(BUFFER_B, 10, 0xFFFF);
         PlayerBufferExecCompleted();
@@ -674,7 +680,9 @@ static void HandleInputChooseMove(void)
             MoveSelectionDestroyCursorAt(gMoveSelectionCursor[gActiveBattler]);
             gMoveSelectionCursor[gActiveBattler] ^= 1;
             PlaySE(SE_SELECT);
+            #ifdef ENABLE_TEXT_EFFECTIVENESS_COLORS
             MoveSelectionDisplayMoveNames(); // Reload Moves
+            #endif
             MoveSelectionCreateCursorAt(gMoveSelectionCursor[gActiveBattler], 0);
             MoveSelectionDisplayPpNumber();
             MoveSelectionDisplayMoveType();
@@ -688,7 +696,9 @@ static void HandleInputChooseMove(void)
             MoveSelectionDestroyCursorAt(gMoveSelectionCursor[gActiveBattler]);
             gMoveSelectionCursor[gActiveBattler] ^= 1;
             PlaySE(SE_SELECT);
+            #ifdef ENABLE_TEXT_EFFECTIVENESS_COLORS
             MoveSelectionDisplayMoveNames(); // Reload Moves
+            #endif
             MoveSelectionCreateCursorAt(gMoveSelectionCursor[gActiveBattler], 0);
             MoveSelectionDisplayPpNumber();
             MoveSelectionDisplayMoveType();
@@ -701,7 +711,9 @@ static void HandleInputChooseMove(void)
             MoveSelectionDestroyCursorAt(gMoveSelectionCursor[gActiveBattler]);
             gMoveSelectionCursor[gActiveBattler] ^= 2;
             PlaySE(SE_SELECT);
+            #ifdef ENABLE_TEXT_EFFECTIVENESS_COLORS
             MoveSelectionDisplayMoveNames(); // Reload Moves
+            #endif
             MoveSelectionCreateCursorAt(gMoveSelectionCursor[gActiveBattler], 0);
             MoveSelectionDisplayPpNumber();
             MoveSelectionDisplayMoveType();
@@ -715,7 +727,9 @@ static void HandleInputChooseMove(void)
             MoveSelectionDestroyCursorAt(gMoveSelectionCursor[gActiveBattler]);
             gMoveSelectionCursor[gActiveBattler] ^= 2;
             PlaySE(SE_SELECT);
+            #ifdef ENABLE_TEXT_EFFECTIVENESS_COLORS
             MoveSelectionDisplayMoveNames(); // Reload Moves
+            #endif
             MoveSelectionCreateCursorAt(gMoveSelectionCursor[gActiveBattler], 0);
             MoveSelectionDisplayPpNumber();
             MoveSelectionDisplayMoveType();
@@ -1578,7 +1592,6 @@ static void PlayerHandleYesNoInput(void)
     }
 }
 
-#include "text.h"
 static void MoveSelectionDisplayMoveNames(void)//
 {
     s32 i;
@@ -1590,6 +1603,7 @@ static void MoveSelectionDisplayMoveNames(void)//
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
+        #ifdef ENABLE_TEXT_EFFECTIVENESS_COLORS
         MoveSelectionDestroyCursorAt(i);
         sHasTypeEffectivenessShown = FALSE;    // Set to false so it doesn't affect calculations
 
@@ -1647,11 +1661,13 @@ static void MoveSelectionDisplayMoveNames(void)//
             #endif
 
         }
+        #endif
 
         // Add move name to the prepared template and backup 
         StringCopy(txtPtr, gMoveNames[moveInfo->moves[i]]);
         StringCopy(neutralTxt, gMoveNames[moveInfo->moves[i]]);
 
+        #ifdef ENABLE_TEXT_EFFECTIVENESS_COLORS
         // Add a symbol to the move name depending on effectiveness
         if (StringLength(gMoveNames[moveInfo->moves[i]]) <= 12) // Max length of string before it starts chopping off
         {
@@ -1679,6 +1695,7 @@ static void MoveSelectionDisplayMoveNames(void)//
             BattlePutTextOnWindow(gDisplayedStringBattle, i + B_WIN_MOVE_NAME_1);
         }
         else
+        #endif
         {
             // Current move is neutral against target
             BattlePutTextOnWindow(neutralTxt, i + B_WIN_MOVE_NAME_1);
